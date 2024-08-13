@@ -1,11 +1,13 @@
 import {
 	Body,
 	Controller,
+	Get,
 	HttpCode,
 	Post,
 	Req,
 	Res,
 	UnauthorizedException,
+	UseGuards,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common'
@@ -13,6 +15,7 @@ import { AuthService } from './auth.service'
 import { AuthDto } from './dto/auth.dto'
 import { Request, Response } from 'express'
 import { ConfigService } from '@nestjs/config'
+import { AuthGuard } from '@nestjs/passport'
 
 @Controller('auth')
 export class AuthController {
@@ -79,5 +82,25 @@ export class AuthController {
 		this.authService.removeRefreshTokenFromResponse(res)
 
 		return true
+	}
+
+	@Get('yandex')
+	@UseGuards(AuthGuard('yandex'))
+	async yandexAuth(@Req() _req) {}
+
+	@Get('yandex/callback')
+	@UseGuards(AuthGuard('yandex'))
+	async yandexAuthCallback(
+		@Req() req: any,
+		@Res({ passthrough: true }) res: Response,
+	) {
+		const { refreshToken, ...response } =
+			await this.authService.validateOAuthLogin(req)
+
+		this.authService.addRefreshTokenToResponse(res, refreshToken)
+
+		return res.redirect(
+			`${process.env['CLIENT_URL']}/dashboard?accessToken=${response.accessToken}`,
+		)
 	}
 }
