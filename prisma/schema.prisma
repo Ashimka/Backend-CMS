@@ -15,7 +15,7 @@ model User {
 
   role   Role   @default(USER)
   name   String @default("Не указано")
-  avatar String @default("/noavatar.png")
+  avatar String @default("/uploads/noavatar.png")
 
   reviews Review[]
 

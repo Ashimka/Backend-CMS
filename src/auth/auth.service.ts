@@ -28,14 +28,14 @@ export class AuthService {
 		}
 
 		const user = await this.userService.create(dto)
-		const tokens = this.issueTokens(user.id)
+		const tokens = this.issueTokens(user.id, user.role)
 
 		return { user, ...tokens }
 	}
 
 	async login(dto: AuthDto) {
 		const user = await this.validateUser(dto)
-		const tokens = this.issueTokens(user.id)
+		const tokens = this.issueTokens(user.id, user.role)
 
 		return { user, ...tokens }
 	}
@@ -48,13 +48,13 @@ export class AuthService {
 		}
 
 		const user = await this.userService.getById(result.id)
-		const tokens = this.issueTokens(user.id)
+		const tokens = this.issueTokens(user.id, user.role)
 
 		return { user, ...tokens }
 	}
 
-	issueTokens(userId: string) {
-		const data = { id: userId }
+	issueTokens(userId: string, role: string) {
+		const data = { id: userId, role }
 
 		const accessToken = this.jwt.sign(data, {
 			expiresIn: this.configService.get('AT_EXP'),
@@ -93,7 +93,7 @@ export class AuthService {
 			})
 		}
 
-		const tokens = this.issueTokens(user.id)
+		const tokens = this.issueTokens(user.id, user.role)
 
 		return { user, ...tokens }
 	}
