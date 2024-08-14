@@ -7,8 +7,9 @@ import { FileModule } from './file/file.module';
 import { OrderModule } from './order/order.module';
 import { StatisticsModule } from './statistics/statistics.module';
 import { ProductModule } from './product/product.module';
+import { ReviewModule } from './review/review.module';
 
 @Module({
-	imports: [ConfigModule.forRoot(), AuthModule, UserModule, CategoryModule, FileModule, OrderModule, StatisticsModule, ProductModule],
+	imports: [ConfigModule.forRoot(), AuthModule, UserModule, CategoryModule, FileModule, OrderModule, StatisticsModule, ProductModule, ReviewModule],
 })
 export class AppModule {}
