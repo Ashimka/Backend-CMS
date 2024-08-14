@@ -8,10 +8,10 @@ export class ProductService {
 
 	async getAll(searchTerm?: string) {
 		if (searchTerm) {
-			return this.getSearchTermFilter(searchTerm)
+			return await this.getSearchTermFilter(searchTerm)
 		}
 
-		const products = await this.prisma.product.findMany({
+		return await this.prisma.product.findMany({
 			orderBy: {
 				createdAt: 'desc',
 			},
@@ -19,25 +19,25 @@ export class ProductService {
 				category: true,
 			},
 		})
-
-		return products
 	}
 
-	private getSearchTermFilter(searchTerm: string) {
-		return {
-			OR: [
-				{
-					title: {
-						contains: searchTerm,
-						mode: 'insensitive',
+	private async getSearchTermFilter(searchTerm: string) {
+		return await this.prisma.product.findMany({
+			where: {
+				OR: [
+					{
+						title: {
+							contains: searchTerm,
+						},
 					},
-					description: {
-						contains: searchTerm,
-						mode: 'insensitive',
+					{
+						description: {
+							contains: searchTerm,
+						},
 					},
-				},
-			],
-		}
+				],
+			},
+		})
 	}
 
 	async getById(id: string) {

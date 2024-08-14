@@ -22,7 +22,7 @@ export class ProductController {
 
 	@Get()
 	async getAll(@Query('searchTerm') searchTerm?: string) {
-		return this.productService.getAll(searchTerm)
+		return await this.productService.getAll(searchTerm)
 	}
 
 	@Get('by-id/:id')
