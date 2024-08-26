@@ -133,11 +133,17 @@ export class StatisticsService {
 		const lastUsers = await this.prisma.user.findMany({
 			orderBy: { createdAt: 'desc' },
 			take: 5,
-			include: {
+			select: {
+				id: true,
+				name: true,
+				email: true,
+				avatar: true,
 				orders: {
 					include: {
 						items: {
-							select: { price: true },
+							select: {
+								price: true,
+							},
 						},
 					},
 				},
@@ -155,7 +161,7 @@ export class StatisticsService {
 				id: user.id,
 				name: user.name,
 				email: user.email,
-				picture: user.avatar,
+				avatar: user.avatar,
 				total,
 			}
 		})

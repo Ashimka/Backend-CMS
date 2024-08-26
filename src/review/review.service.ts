@@ -29,6 +29,15 @@ export class ReviewService {
 		return review
 	}
 
+	async getAll() {
+		const review = await this.prisma.review.findMany({
+			include: {
+				user: true,
+			},
+		})
+		return review
+	}
+
 	async create(userId: string, productId: string, dto: ReviewDto) {
 		await this.productService.getById(productId)
 

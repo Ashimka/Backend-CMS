@@ -2,6 +2,7 @@ import {
 	Body,
 	Controller,
 	Delete,
+	Get,
 	HttpCode,
 	Param,
 	Post,
@@ -27,6 +28,12 @@ export class ReviewController {
 		@Body() dto: ReviewDto,
 	) {
 		return this.reviewService.create(userId, productId, dto)
+	}
+
+	@Auth()
+	@Get('/')
+	async getByStoreId() {
+		return this.reviewService.getAll()
 	}
 
 	@HttpCode(200)

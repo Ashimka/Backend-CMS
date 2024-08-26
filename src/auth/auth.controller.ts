@@ -100,7 +100,7 @@ export class AuthController {
 		this.authService.addRefreshTokenToResponse(res, refreshToken)
 
 		return res.redirect(
-			`${process.env['CLIENT_URL']}/dashboard?accessToken=${response.accessToken}`,
+			`${process.env['CLIENT_URL']}/profile?accessToken=${response.accessToken}`,
 		)
 	}
 }

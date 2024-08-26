@@ -9,8 +9,33 @@ export class UserService {
 	async getById(id: string) {
 		const user = await this.prisma.user.findUnique({
 			where: { id },
-			include: {
-				favorites: true,
+			select: {
+				id: true,
+				email: true,
+				name: true,
+				avatar: true,
+				role: true,
+				reviews: true,
+				favorites: {
+					select: {
+						products: {
+							select: {
+								id: true,
+								title: true,
+								description: true,
+								images: true,
+								price: true,
+								category: {
+									select: {
+										id: true,
+										title: true,
+										description: true,
+									},
+								},
+							},
+						},
+					},
+				},
 				orders: true,
 			},
 		})
@@ -30,24 +55,27 @@ export class UserService {
 	}
 
 	async toggleFavorite(productId: string, userId: string) {
-		const user = await this.getById(userId)
-
-		const isExists = user.favorites.some(
-			product => product.id === productId,
-		)
-
-		await this.prisma.user.update({
+		const isExists = await this.prisma.favorites.findFirst({
 			where: {
-				id: user.id,
-			},
-			data: {
-				favorites: {
-					[isExists ? 'disconnect' : 'connect']: {
-						id: productId,
-					},
-				},
+				userId,
+				productId,
 			},
 		})
+
+		if (isExists) {
+			await this.prisma.favorites.delete({
+				where: {
+					id: isExists.id,
+				},
+			})
+		} else {
+			await this.prisma.favorites.create({
+				data: {
+					userId,
+					productId,
+				},
+			})
+		}
 
 		return true
 	}

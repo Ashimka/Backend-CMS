@@ -11,6 +11,8 @@ import { AuthDto } from './dto/auth.dto'
 import { ConfigService } from '@nestjs/config'
 import { Response } from 'express'
 
+import { verify } from 'argon2'
+
 @Injectable()
 export class AuthService {
 	constructor(
@@ -35,6 +37,13 @@ export class AuthService {
 
 	async login(dto: AuthDto) {
 		const user = await this.validateUser(dto)
+
+		const verifyPass = await this.chechPassword(dto.password, user.password)
+
+		if (!verifyPass) {
+			throw new UnauthorizedException('Неверный пароль')
+		}
+
 		const tokens = this.issueTokens(user.id, user.role)
 
 		return { user, ...tokens }
@@ -119,5 +128,9 @@ export class AuthService {
 
 	removeRefreshTokenFromResponse(res: Response) {
 		res.clearCookie(this.configService.get('REFRESH_TOKEN_NAME'))
+	}
+
+	private async chechPassword(password: string, hashPassword: string) {
+		return await verify(hashPassword, password)
 	}
 }

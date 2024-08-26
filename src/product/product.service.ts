@@ -37,6 +37,9 @@ export class ProductService {
 					},
 				],
 			},
+			include: {
+				category: true,
+			},
 		})
 	}
 
@@ -138,7 +141,7 @@ export class ProductService {
 				title: dto.title,
 				description: dto.description,
 				price: dto.price,
-				images: dto.images,
+				images: dto.images.toString(),
 				categoryId: dto.categoryId,
 			},
 		})
