@@ -31,13 +31,13 @@ export class StatisticsService {
 		const productsCount = await this.countProducts()
 		const categoriesCount = await this.countCategories()
 
-		// const averageRating = await this.calculateAverageRating()
+		const averageRating = await this.calculateAverageRating()
 
 		return [
 			{ id: 1, name: 'Выручка', value: totalRevenue },
 			{ id: 2, name: 'Товары', value: productsCount },
 			{ id: 3, name: 'Категории', value: categoriesCount },
-			// { id: 4, name: 'Средний рейтинг', value: averageRating || 0 },
+			{ id: 4, name: 'Средний рейтинг', value: averageRating || 0 },
 		]
 	}
 
@@ -74,13 +74,12 @@ export class StatisticsService {
 		return await this.prisma.category.count({})
 	}
 
-	// private async calculateAverageRating(storeId: string) {
-	// 	const averageRating = await this.prisma.review.aggregate({
-	// 		where: { storeId },
-	// 		_avg: { rating: true },
-	// 	})
-	// 	return averageRating._avg.rating
-	// }
+	private async calculateAverageRating() {
+		const averageRating = await this.prisma.review.aggregate({
+			_avg: { rating: true },
+		})
+		return averageRating._avg.rating
+	}
 
 	private async calculateMonthlySales() {
 		const startDate = dayjs().subtract(30, 'days').startOf('day').toDate()
@@ -143,6 +142,7 @@ export class StatisticsService {
 						items: {
 							select: {
 								price: true,
+								quantity: true,
 							},
 						},
 					},
@@ -154,7 +154,7 @@ export class StatisticsService {
 			const lastOrder = user.orders[user.orders.length - 1]
 
 			const total = lastOrder?.items.reduce((total, item) => {
-				return total + item.price
+				return total + item.price * item.quantity
 			}, 0)
 
 			return {
