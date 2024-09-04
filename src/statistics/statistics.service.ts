@@ -78,7 +78,8 @@ export class StatisticsService {
 		const averageRating = await this.prisma.review.aggregate({
 			_avg: { rating: true },
 		})
-		return averageRating._avg.rating
+
+		return averageRating._avg.rating.toPrecision(2)
 	}
 
 	private async calculateMonthlySales() {

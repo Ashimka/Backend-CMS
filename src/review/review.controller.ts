@@ -6,6 +6,7 @@ import {
 	HttpCode,
 	Param,
 	Post,
+	UseGuards,
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common'
@@ -13,6 +14,9 @@ import { ReviewService } from './review.service'
 import { Auth } from 'src/auth/decorators/auth.decorator'
 import { CurrentUser } from 'src/user/decorators/user.decorator'
 import { ReviewDto } from './dto/review.dto'
+import { RolesGuard } from 'src/auth/guards/role.guard'
+import { Roles } from 'src/auth/decorators/roles.decorator'
+import { Role } from '@prisma/client'
 
 @Controller('reviews')
 export class ReviewController {
@@ -30,7 +34,8 @@ export class ReviewController {
 		return this.reviewService.create(userId, productId, dto)
 	}
 
-	@Auth()
+	@UseGuards(RolesGuard)
+	@Roles(Role.ADMIN)
 	@Get('/')
 	async getByStoreId() {
 		return this.reviewService.getAll()

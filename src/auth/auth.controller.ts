@@ -16,7 +16,9 @@ import { AuthDto } from './dto/auth.dto'
 import { Request, Response } from 'express'
 import { ConfigService } from '@nestjs/config'
 import { AuthGuard } from '@nestjs/passport'
+import { Public } from './decorators/public.decorator'
 
+@Public()
 @Controller('auth')
 export class AuthController {
 	constructor(

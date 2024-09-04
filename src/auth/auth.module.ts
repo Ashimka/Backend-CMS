@@ -10,7 +10,7 @@ import { UserService } from 'src/user/user.service'
 import { JwtStrategy } from './strategy/jwt.strategy'
 import { YandexStrategy } from './strategy/yandex.strategy'
 import { RolesGuard } from './guards/role.guard'
-import { APP_GUARD } from '@nestjs/core'
+import { JwtAuthGuard } from './guards/jwt-auth.guard'
 
 @Module({
 	imports: [
@@ -27,11 +27,8 @@ import { APP_GUARD } from '@nestjs/core'
 		AuthService,
 		PrismaService,
 		UserService,
-		{
-			provide: APP_GUARD,
-			useClass: RolesGuard,
-		},
-
+		JwtAuthGuard,
+		RolesGuard,
 		JwtStrategy,
 		YandexStrategy,
 	],
