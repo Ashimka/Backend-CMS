@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common'
 import { hash } from 'argon2'
 import { AuthDto } from 'src/auth/dto/auth.dto'
 import { PrismaService } from 'src/prisma.service'
+import { ProfileDto } from './dto/profile.dto'
 
 @Injectable()
 export class UserService {
@@ -37,6 +38,7 @@ export class UserService {
 					},
 				},
 				orders: true,
+				profile: true,
 			},
 		})
 
@@ -98,6 +100,18 @@ export class UserService {
 				name: dto.name,
 				avatar: '/uploads/noavatar.png',
 				password: await hash(dto.password),
+			},
+		})
+	}
+
+	async profileCreate(dto: ProfileDto, id: string) {
+		return await this.prisma.profile.create({
+			data: {
+				address: dto.address,
+				firstName: dto.firstName,
+				lastName: dto.lastName,
+				phone: dto.phone,
+				userId: id,
 			},
 		})
 	}

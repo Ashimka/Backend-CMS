@@ -20,12 +20,27 @@ model User {
 
   reviews Review[]
 
-  createdAt DateTime    @default(now()) @map("created_at")
-  updatedAt DateTime    @updatedAt @map("updated_at")
+  profile Profile?
+
   favorites Favorites[]
   orders    Order[]
 
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
   @@map("users")
+}
+
+model Profile {
+  id String @id @unique @default(cuid())
+
+  address   String
+  firstName String @map("first_name")
+  lastName  String @map("last_name")
+  phone     String
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String @unique
 }
 
 enum Role {
