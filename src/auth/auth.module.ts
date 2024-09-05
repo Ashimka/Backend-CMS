@@ -11,6 +11,8 @@ import { JwtStrategy } from './strategy/jwt.strategy'
 import { YandexStrategy } from './strategy/yandex.strategy'
 import { RolesGuard } from './guards/role.guard'
 import { JwtAuthGuard } from './guards/jwt-auth.guard'
+import { VkStrategy } from './strategy/vk.strategy'
+import { PassportModule } from '@nestjs/passport'
 
 @Module({
 	imports: [
@@ -21,6 +23,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard'
 			inject: [ConfigService],
 			useFactory: getJwtConfig,
 		}),
+		PassportModule,
 	],
 	controllers: [AuthController],
 	providers: [
@@ -31,6 +34,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard'
 		RolesGuard,
 		JwtStrategy,
 		YandexStrategy,
+		VkStrategy,
 	],
 })
 export class AuthModule {}

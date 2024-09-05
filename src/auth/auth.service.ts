@@ -86,14 +86,17 @@ export class AuthService {
 	}
 
 	async validateOAuthLogin(req: any) {
-		let user = await this.userService.getByEmail(req.user.email)
+		let user = req.user.vkId
+			? await this.userService.getByVkId(req.user.vkId)
+			: await this.userService.getByEmail(req.user.email)
 
 		if (!user) {
 			user = await this.prisma.user.create({
 				data: {
 					email: req.user.email,
 					name: req.user.name,
-					avatar: req.user.picture,
+					avatar: req.user.avatar,
+					vkId: req.user.vkId,
 				},
 				include: {
 					favorites: true,

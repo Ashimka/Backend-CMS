@@ -53,6 +53,17 @@ export class UserService {
 
 		return user
 	}
+	async getByVkId(vkId: number) {
+		const user = await this.prisma.user.findFirst({
+			where: { vkId },
+			include: {
+				favorites: true,
+				orders: true,
+			},
+		})
+
+		return user
+	}
 
 	async toggleFavorite(productId: string, userId: string) {
 		const isExists = await this.prisma.favorites.findFirst({
@@ -85,6 +96,7 @@ export class UserService {
 			data: {
 				email: dto.email,
 				name: dto.name,
+				avatar: '/uploads/noavatar.png',
 				password: await hash(dto.password),
 			},
 		})

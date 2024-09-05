@@ -1,9 +1,19 @@
-import { IsEmail, IsOptional, IsString, MinLength } from 'class-validator'
+import {
+	IsEmail,
+	IsNumber,
+	IsOptional,
+	IsString,
+	MinLength,
+} from 'class-validator'
 
 export class AuthDto {
 	@IsOptional()
 	@IsString()
 	name: string
+
+	@IsOptional()
+	@IsNumber()
+	vkId: number
 
 	@IsString({
 		message: 'Email обязателен',

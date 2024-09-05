@@ -105,4 +105,20 @@ export class AuthController {
 			`${process.env['CLIENT_URL']}/profile?accessToken=${response.accessToken}`,
 		)
 	}
+	@Get('vk')
+	@UseGuards(AuthGuard('vk'))
+	async vkAuth(@Req() _req) {}
+
+	@Get('vk/callback')
+	@UseGuards(AuthGuard('vk'))
+	async vkAuthCallback(@Req() req: any, @Res() res: Response) {
+		const { refreshToken, ...response } =
+			await this.authService.validateOAuthLogin(req)
+
+		this.authService.addRefreshTokenToResponse(res, refreshToken)
+
+		return res.redirect(
+			`${process.env['CLIENT_URL']}/profile?accessTokenVK=${response.accessToken}`,
+		)
+	}
 }
