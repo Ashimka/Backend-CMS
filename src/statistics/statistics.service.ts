@@ -148,6 +148,12 @@ export class StatisticsService {
 						},
 					},
 				},
+				profile: {
+					select: {
+						firstName: true,
+						lastName: true,
+					},
+				},
 			},
 		})
 
@@ -164,6 +170,7 @@ export class StatisticsService {
 				email: user.email,
 				avatar: user.avatar,
 				total,
+				profile: user.profile,
 			}
 		})
 	}

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { hash } from 'argon2'
 import { AuthDto } from 'src/auth/dto/auth.dto'
 import { PrismaService } from 'src/prisma.service'
@@ -104,7 +104,7 @@ export class UserService {
 		})
 	}
 
-	async profileCreate(dto: ProfileDto, id: string) {
+	async profileCreate(id: string, dto: ProfileDto) {
 		return await this.prisma.profile.create({
 			data: {
 				address: dto.address,
@@ -113,6 +113,20 @@ export class UserService {
 				phone: dto.phone,
 				userId: id,
 			},
+		})
+	}
+	async profileUpdate(id: string, dto: ProfileDto) {
+		const user = await this.getById(id)
+
+		if (user.profile === null) {
+			throw new NotFoundException('Профиль пользователя не найден')
+		}
+
+		return this.prisma.profile.update({
+			where: {
+				id: user.profile.id,
+			},
+			data: dto,
 		})
 	}
 }

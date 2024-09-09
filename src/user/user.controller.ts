@@ -19,7 +19,15 @@ export class UserController {
 		@CurrentUser('id') id: string,
 		@Body() dto: ProfileDto,
 	) {
-		return await this.userService.profileCreate(dto, id)
+		return await this.userService.profileCreate(id, dto)
+	}
+
+	@Patch('profile')
+	async updateProfile(
+		@CurrentUser('id') id: string,
+		@Body() dto: ProfileDto,
+	) {
+		return await this.userService.profileUpdate(id, dto)
 	}
 
 	@Auth()
