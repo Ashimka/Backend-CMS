@@ -18,7 +18,6 @@ import { ConfigService } from '@nestjs/config'
 import { AuthGuard } from '@nestjs/passport'
 import { Public } from './decorators/public.decorator'
 
-@Public()
 @Controller('auth')
 export class AuthController {
 	constructor(
@@ -26,6 +25,7 @@ export class AuthController {
 		private configService: ConfigService,
 	) {}
 
+	@Public()
 	@UsePipes(new ValidationPipe())
 	@HttpCode(200)
 	@Post('login')
@@ -35,11 +35,12 @@ export class AuthController {
 	) {
 		const { refreshToken, ...response } = await this.authService.login(dto)
 
-		this.authService.addRefreshTokenToResponse(res, refreshToken)
+		this.addRefreshTokenToResponse(res, refreshToken)
 
 		return response
 	}
 
+	@Public()
 	@UsePipes(new ValidationPipe())
 	@HttpCode(201)
 	@Post('register')
@@ -50,11 +51,12 @@ export class AuthController {
 		const { refreshToken, ...response } =
 			await this.authService.register(dto)
 
-		this.authService.addRefreshTokenToResponse(res, refreshToken)
+		this.addRefreshTokenToResponse(res, refreshToken)
 
 		return response
 	}
 
+	@Public()
 	@UsePipes(new ValidationPipe())
 	@HttpCode(201)
 	@Post('refresh')
@@ -66,30 +68,32 @@ export class AuthController {
 			req.cookies[this.configService.get('REFRESH_TOKEN_NAME')]
 
 		if (!refreshTokenFromCookies) {
-			this.authService.removeRefreshTokenFromResponse(res)
+			this.removeRefreshTokenFromResponse(res)
 			throw new UnauthorizedException('Не авторизован, token invalid!')
 		}
 
 		const { refreshToken, ...response } =
 			await this.authService.getNewTokens(refreshTokenFromCookies)
 
-		this.authService.addRefreshTokenToResponse(res, refreshToken)
+		this.addRefreshTokenToResponse(res, refreshToken)
 
 		return response
 	}
 
+	@Public()
 	@HttpCode(200)
 	@Post('logout')
 	async logout(@Res({ passthrough: true }) res: Response) {
-		this.authService.removeRefreshTokenFromResponse(res)
-
+		this.removeRefreshTokenFromResponse(res)
 		return true
 	}
 
+	@Public()
 	@Get('yandex')
 	@UseGuards(AuthGuard('yandex'))
 	async yandexAuth(@Req() _req) {}
 
+	@Public()
 	@Get('yandex/callback')
 	@UseGuards(AuthGuard('yandex'))
 	async yandexAuthCallback(
@@ -99,26 +103,49 @@ export class AuthController {
 		const { refreshToken, ...response } =
 			await this.authService.validateOAuthLogin(req)
 
-		this.authService.addRefreshTokenToResponse(res, refreshToken)
+		this.addRefreshTokenToResponse(res, refreshToken)
 
 		return res.redirect(
 			`${process.env['CLIENT_URL']}/profile?accessToken=${response.accessToken}`,
 		)
 	}
+
+	@Public()
 	@Get('vk')
 	@UseGuards(AuthGuard('vk'))
 	async vkAuth(@Req() _req) {}
 
+	@Public()
 	@Get('vk/callback')
 	@UseGuards(AuthGuard('vk'))
 	async vkAuthCallback(@Req() req: any, @Res() res: Response) {
 		const { refreshToken, ...response } =
 			await this.authService.validateOAuthLogin(req)
 
-		this.authService.addRefreshTokenToResponse(res, refreshToken)
+		this.addRefreshTokenToResponse(res, refreshToken)
 
 		return res.redirect(
 			`${process.env['CLIENT_URL']}/profile?accessTokenVK=${response.accessToken}`,
 		)
+	}
+	private addRefreshTokenToResponse(res: Response, refreshToken: string) {
+		const expiresIn = new Date()
+		expiresIn.setDate(expiresIn.getDate() + 7)
+
+		res.cookie('RefreshToken', refreshToken, {
+			httpOnly: true,
+			expires: expiresIn,
+			sameSite: 'none',
+			secure: true,
+			domain: this.configService.get<string>('SERVER_DOMAIN'),
+		})
+	}
+
+	private removeRefreshTokenFromResponse(res: Response) {
+		res.cookie('RefreshToken', '', {
+			expires: new Date(),
+			httpOnly: true,
+			secure: true,
+		})
 	}
 }

@@ -110,29 +110,6 @@ export class AuthService {
 		return { user, ...tokens }
 	}
 
-	addRefreshTokenToResponse(res: Response, refreshToken: string) {
-		const expiresIn = new Date()
-		expiresIn.setDate(
-			expiresIn.getDate() +
-				this.configService.get<number>('EXPIRE_DAY_RT'),
-		)
-
-		res.cookie(this.configService.get('REFRESH_TOKEN_NAME'), refreshToken, {
-			httpOnly: true,
-			domain: this.configService.get('SERVER_DOMAIN'),
-			expires: expiresIn,
-			secure: true,
-			sameSite:
-				this.configService.get('MODE') === 'production'
-					? 'lax'
-					: 'none',
-		})
-	}
-
-	removeRefreshTokenFromResponse(res: Response) {
-		res.clearCookie(this.configService.get('REFRESH_TOKEN_NAME'))
-	}
-
 	private async chechPassword(password: string, hashPassword: string) {
 		return await verify(hashPassword, password)
 	}
