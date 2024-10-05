@@ -9,8 +9,6 @@ import { PrismaService } from 'src/prisma.service'
 import { UserService } from 'src/user/user.service'
 import { AuthDto } from './dto/auth.dto'
 import { ConfigService } from '@nestjs/config'
-import { Response } from 'express'
-
 import { verify } from 'argon2'
 
 @Injectable()

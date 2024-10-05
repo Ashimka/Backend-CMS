@@ -91,7 +91,9 @@ export class AuthController {
 	@Public()
 	@Get('yandex')
 	@UseGuards(AuthGuard('yandex'))
-	async yandexAuth(@Req() _req) {}
+	async yandexAuth(@Req() _req) {
+		console.log(_req)
+	}
 
 	@Public()
 	@Get('yandex/callback')
@@ -113,7 +115,9 @@ export class AuthController {
 	@Public()
 	@Get('vk')
 	@UseGuards(AuthGuard('vk'))
-	async vkAuth(@Req() _req) {}
+	async vkAuth(@Req() _req) {
+		console.log(_req)
+	}
 
 	@Public()
 	@Get('vk/callback')
