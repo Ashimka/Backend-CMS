@@ -10,6 +10,7 @@ import { ProductModule } from './product/product.module'
 import { ReviewModule } from './review/review.module'
 import { APP_GUARD } from '@nestjs/core'
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard'
+import { DashboardModule } from './dashboard/dashboard.module';
 
 @Module({
 	imports: [
@@ -22,6 +23,7 @@ import { JwtAuthGuard } from './auth/guards/jwt-auth.guard'
 		StatisticsModule,
 		ProductModule,
 		ReviewModule,
+		DashboardModule,
 	],
 	providers: [
 		{
