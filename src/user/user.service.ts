@@ -67,6 +67,22 @@ export class UserService {
 		return user
 	}
 
+	async getAllUsers() {
+		return await this.prisma.user.findMany({
+			select: {
+				id: true,
+				email: true,
+				role: true,
+				name: true,
+				avatar: true,
+				createdAt: true,
+			},
+			orderBy: {
+				createdAt: 'desc',
+			},
+		})
+	}
+
 	async toggleFavorite(productId: string, userId: string) {
 		const isExists = await this.prisma.favorites.findFirst({
 			where: {

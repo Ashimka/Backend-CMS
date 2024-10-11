@@ -10,8 +10,21 @@ export class DashboardService {
 		private readonly prisma: PrismaService,
 		private readonly userService: UserService,
 	) {}
-	async updateRoleUser(roleDto: UpdateRoleDto) {
-		const user = await this.userService.getById(roleDto.id)
+
+	async getOneUser(userId: string) {
+		const user = await this.userService.getById(userId)
+		if (!user) {
+			throw new NotFoundException('Пользователь не найден')
+		}
+		return user
+	}
+
+	async getAllUsers() {
+		return await this.userService.getAllUsers()
+	}
+
+	async updateRoleUser(userId: string, roleDto: UpdateRoleDto) {
+		const user = await this.userService.getById(userId)
 		if (!user) {
 			throw new NotFoundException('Пользователь не найден')
 		}

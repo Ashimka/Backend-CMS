@@ -79,7 +79,7 @@ export class StatisticsService {
 			_avg: { rating: true },
 		})
 
-		return averageRating._avg.rating.toPrecision(2)
+		return averageRating._avg.rating
 	}
 
 	private async calculateMonthlySales() {
