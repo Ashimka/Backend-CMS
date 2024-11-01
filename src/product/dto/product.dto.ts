@@ -23,7 +23,7 @@ export class ProductDto {
 		each: true,
 		message: 'Путь к картинке не может быть пустым',
 	})
-	images: string
+	images: string[]
 
 	@IsString({
 		message: 'Категория обязательна',

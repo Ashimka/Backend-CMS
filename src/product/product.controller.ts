@@ -12,7 +12,6 @@ import {
 	UsePipes,
 	ValidationPipe,
 } from '@nestjs/common'
-import { Auth } from 'src/auth/decorators/auth.decorator'
 
 import { ProductDto } from './dto/product.dto'
 import { ProductService } from './product.service'

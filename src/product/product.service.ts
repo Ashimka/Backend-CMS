@@ -141,7 +141,7 @@ export class ProductService {
 				title: dto.title,
 				description: dto.description,
 				price: dto.price,
-				images: dto.images.toString(),
+				images: dto.images,
 				categoryId: dto.categoryId,
 			},
 		})

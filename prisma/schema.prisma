@@ -58,7 +58,7 @@ model Product {
   title       String
   description String
   price       Int
-  images      String
+  images      String[]
 
   reviews Review[]
 
