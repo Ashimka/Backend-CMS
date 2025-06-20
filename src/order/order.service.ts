@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { PrismaService } from 'src/prisma.service'
 import { OrderDto } from './dto/order.dto'
 
@@ -37,5 +37,32 @@ export class OrderService {
 		})
 
 		return order
+	}
+
+	async getOrdersDetails(orderId: string) {
+		const orders = await this.prisma.orderItem.findMany({
+			where: {
+				orderId,
+			},
+			select: {
+				id: true,
+				quantity: true,
+				price: true,
+				product: {
+					select: {
+						title: true,
+					},
+				},
+			},
+		})
+
+		if (orders.length === 0) throw new NotFoundException('Заказ не найден')
+
+		return orders.map(order => ({
+			id: order.id,
+			quantity: order.quantity,
+			price: order.price,
+			title: order.product.title,
+		}))
 	}
 }

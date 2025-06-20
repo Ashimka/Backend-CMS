@@ -1,7 +1,9 @@
 import {
 	Body,
 	Controller,
+	Get,
 	HttpCode,
+	Param,
 	Post,
 	UsePipes,
 	ValidationPipe,
@@ -21,5 +23,11 @@ export class OrderController {
 	@Auth()
 	async checkout(@Body() dto: OrderDto, @CurrentUser('id') userId: string) {
 		return this.orderService.createOrder(dto, userId)
+	}
+
+	@Get('/:orderId')
+	@Auth()
+	async getOrdersDetails(@Param('orderId') orderId: string) {
+		return this.orderService.getOrdersDetails(orderId)
 	}
 }
