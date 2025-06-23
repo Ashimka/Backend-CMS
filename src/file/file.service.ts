@@ -1,5 +1,11 @@
-import { Injectable } from '@nestjs/common'
+import {
+	Injectable,
+	InternalServerErrorException,
+	NotFoundException,
+} from '@nestjs/common'
 import { path } from 'app-root-path'
+import { resolve } from 'path'
+import { unlink } from 'fs/promises'
 import { ensureDir, writeFile } from 'fs-extra'
 import { FileResponse } from './file.interface'
 
@@ -27,5 +33,18 @@ export class FileService {
 		)
 
 		return response
+	}
+
+	async deleteFile(name: string, folder: string = 'products') {
+		try {
+			await unlink(resolve(`${path}/uploads/${folder}`, name))
+
+			return { message: 'Файл успешно удален' }
+		} catch (err) {
+			if (err.code === 'ENOENT') {
+				throw new NotFoundException('Файл не найден')
+			}
+			throw new InternalServerErrorException('Ошибка при удалении файла')
+		}
 	}
 }
