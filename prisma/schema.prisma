@@ -18,10 +18,9 @@ model User {
   name   String @default("Не указано")
   avatar String
 
-
   profile Profile?
 
-  reviews Review[]
+  reviews   Review[]
   favorites Favorites[]
   orders    Order[]
 
