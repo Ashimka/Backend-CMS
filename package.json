@@ -37,6 +37,7 @@
 		"cookie-parser": "^1.4.6",
 		"dayjs": "^1.11.12",
 		"fs-extra": "^11.2.0",
+		"joi": "^17.13.3",
 		"passport": "^0.7.0",
 		"passport-jwt": "^4.0.1",
 		"passport-vkontakte": "^0.5.0",
