@@ -18,7 +18,7 @@ import { DashboardModule } from './dashboard/dashboard.module'
 	imports: [
 		ConfigModule.forRoot({
 			isGlobal: true,
-			envFilePath: ['.env', '.env.example'],
+			envFilePath: [`.env.${process.env.NODE_ENV}`, '.env'],
 			validationSchema: Joi.object({
 				NODE_ENV: Joi.string()
 					.valid('development', 'production', 'test')
