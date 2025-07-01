@@ -2,9 +2,13 @@ import { AppModule } from './app.module'
 import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
 import * as cookieParser from 'cookie-parser'
+import { WinstonModule } from 'nest-winston'
+import { winstonConfig } from './config/winston-logger.config'
 
 async function bootstrap() {
-	const app = await NestFactory.create(AppModule)
+	const app = await NestFactory.create(AppModule, {
+		logger: WinstonModule.createLogger(winstonConfig),
+	})
 	const configService = app.get(ConfigService)
 	const PORT = configService.get<number>('PORT', 8050)
 
