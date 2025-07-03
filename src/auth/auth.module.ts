@@ -10,7 +10,7 @@ import { UserService } from 'src/user/user.service'
 
 import { AuthController } from './auth.controller'
 
-import { getJwtConfig } from 'src/config/jwt.config'
+import { getJwtConfig } from '../../common/config/jwt.config'
 import { JwtStrategy } from './strategy/jwt.strategy'
 import { YandexStrategy } from './strategy/yandex.strategy'
 import { VkStrategy } from './strategy/vk.strategy'

@@ -10,8 +10,8 @@ import { ReviewDto } from './dto/review.dto'
 
 @Injectable()
 export class ReviewService {
+	private readonly logger = new Logger(ReviewService.name)
 	constructor(
-		private readonly logger = new Logger(ReviewService.name),
 		private prisma: PrismaService,
 		private productService: ProductService,
 	) {}

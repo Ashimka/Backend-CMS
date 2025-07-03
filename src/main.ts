@@ -3,7 +3,8 @@ import { ConfigService } from '@nestjs/config'
 import { NestFactory } from '@nestjs/core'
 import * as cookieParser from 'cookie-parser'
 import { WinstonModule } from 'nest-winston'
-import { winstonConfig } from './config/winston-logger.config'
+import { winstonConfig } from '../common/config/winston-logger.config'
+import { HttpExceptionFilter } from '../common/filters/http-exception.filter'
 
 async function bootstrap() {
 	const app = await NestFactory.create(AppModule, {
@@ -21,6 +22,7 @@ async function bootstrap() {
 		credentials: true,
 		exposedHeaders: 'set-cookie',
 	})
+	app.useGlobalFilters(new HttpExceptionFilter())
 
 	await app.listen(PORT)
 }
