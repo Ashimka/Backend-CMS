@@ -67,6 +67,8 @@ model Product {
   OrderItem  OrderItem[]
 
   @@map("products")
+  @@index([categoryId])
+  @@index([title])
 }
 
 model Favorites {
@@ -91,6 +93,7 @@ model Category {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("category")
+  @@index([title])
 }
 
 model Review {
@@ -124,6 +127,9 @@ model Order {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("order")
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
 }
 
 model OrderItem {
@@ -142,6 +148,9 @@ model OrderItem {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("order_item")
+  @@index([orderId])
+  @@index([productId])
+  @@index([createdAt])
 }
 
 enum EnumOrderStatus {
