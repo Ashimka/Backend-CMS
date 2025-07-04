@@ -6,19 +6,48 @@ import { ProductDto } from './dto/product.dto'
 export class ProductService {
 	constructor(private prisma: PrismaService) {}
 
-	async getAll(searchTerm?: string) {
-		if (searchTerm) {
-			return await this.getSearchTermFilter(searchTerm)
-		}
+	async getAll({
+		take,
+		skip,
+		searchTerm,
+		page,
+	}: {
+		take: number
+		skip: number
+		searchTerm?: string
+		page: number
+	}) {
+		const [items, total] = await Promise.all([
+			this.prisma.product.findMany({
+				where: searchTerm
+					? { title: { contains: searchTerm, mode: 'insensitive' } }
+					: {},
+				take,
+				skip,
+				orderBy: { createdAt: 'desc' },
+				select: {
+					id: true,
+					title: true,
+					description: true,
+					price: true,
+					images: true,
+					category: {
+						select: {
+							title: true,
+							id: true,
+						},
+					},
+				},
+			}),
+			this.prisma.product.count(),
+		])
 
-		return await this.prisma.product.findMany({
-			orderBy: {
-				createdAt: 'desc',
-			},
-			include: {
-				category: true,
-			},
-		})
+		return {
+			total,
+			page: +page,
+			limit: take,
+			items,
+		}
 	}
 
 	private async getSearchTermFilter(searchTerm: string) {
@@ -66,12 +95,21 @@ export class ProductService {
 	async getByCategory(categoryId: string) {
 		const products = await this.prisma.product.findMany({
 			where: {
-				category: {
-					id: categoryId,
-				},
+				categoryId,
 			},
-			include: {
-				category: true,
+			orderBy: { createdAt: 'desc' },
+			select: {
+				id: true,
+				title: true,
+				description: true,
+				price: true,
+				images: true,
+				category: {
+					select: {
+						title: true,
+					},
+				},
+				createdAt: true,
 			},
 		})
 

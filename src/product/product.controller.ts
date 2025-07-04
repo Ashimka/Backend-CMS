@@ -26,8 +26,19 @@ export class ProductController {
 
 	@Public()
 	@Get()
-	async getAll(@Query('searchTerm') searchTerm?: string) {
-		return await this.productService.getAll(searchTerm)
+	async getAll(
+		@Query('page') page: number = 1,
+		@Query('limit') limit: number = 12,
+		@Query('searchTerm') searchTerm?: string,
+	) {
+		const take = Math.min(limit, 24)
+		const skip = (page - 1) * take
+		return await this.productService.getAll({
+			take,
+			skip,
+			searchTerm,
+			page,
+		})
 	}
 
 	@Public()
