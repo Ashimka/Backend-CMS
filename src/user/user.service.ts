@@ -67,20 +67,39 @@ export class UserService {
 		return user
 	}
 
-	async getAllUsers() {
-		return await this.prisma.user.findMany({
-			select: {
-				id: true,
-				email: true,
-				role: true,
-				name: true,
-				avatar: true,
-				createdAt: true,
-			},
-			orderBy: {
-				createdAt: 'desc',
-			},
-		})
+	async getAllUsers({
+		take,
+		skip,
+		page,
+	}: {
+		take: number
+		skip: number
+		page: number
+	}) {
+		const [items, total] = await Promise.all([
+			await this.prisma.user.findMany({
+				select: {
+					id: true,
+					email: true,
+					role: true,
+					name: true,
+					avatar: true,
+					createdAt: true,
+				},
+				take,
+				skip,
+				orderBy: {
+					createdAt: 'desc',
+				},
+			}),
+			this.prisma.user.count(),
+		])
+		return {
+			total,
+			page: +page,
+			limit: take,
+			items,
+		}
 	}
 
 	async toggleFavorite(productId: string, userId: string) {

@@ -19,10 +19,6 @@ export class DashboardService {
 		return user
 	}
 
-	async getAllUsers() {
-		return await this.userService.getAllUsers()
-	}
-
 	async updateRoleUser(userId: string, roleDto: UpdateRoleDto) {
 		const user = await this.userService.getById(userId)
 		if (!user) {
