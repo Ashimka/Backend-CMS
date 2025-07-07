@@ -1,14 +1,28 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Inject, Injectable, NotFoundException } from '@nestjs/common'
 import { hash } from 'argon2'
 import { AuthDto } from 'src/auth/dto/auth.dto'
 import { PrismaService } from 'src/prisma.service'
 import { ProfileDto } from './dto/profile.dto'
+import { CACHE_MANAGER } from '@nestjs/cache-manager'
+import { Cache } from 'cache-manager'
+import { UserProfile } from './user.type'
 
 @Injectable()
 export class UserService {
-	constructor(private readonly prisma: PrismaService) {}
+	constructor(
+		private readonly prisma: PrismaService,
+		@Inject(CACHE_MANAGER) private cacheManager: Cache,
+	) {}
+
 	async getById(id: string) {
-		const user = await this.prisma.user.findUnique({
+		const cacheKey = `user_${id}`
+
+		let user: UserProfile = await this.cacheManager.get(cacheKey)
+
+		if (user) {
+			return user
+		}
+		user = await this.prisma.user.findUnique({
 			where: { id },
 			select: {
 				id: true,
@@ -37,10 +51,22 @@ export class UserService {
 						},
 					},
 				},
+				profile: {
+					select: {
+						id: true,
+						address: true,
+						firstName: true,
+						lastName: true,
+						phone: true,
+					},
+				},
 				orders: true,
-				profile: true,
 			},
 		})
+
+		if (user) {
+			await this.cacheManager.set(cacheKey, user)
+		}
 
 		return user
 	}
@@ -156,6 +182,8 @@ export class UserService {
 		if (user.profile === null) {
 			throw new NotFoundException('Профиль пользователя не найден')
 		}
+
+		await this.cacheManager.del(`user_${id}`)
 
 		return this.prisma.profile.update({
 			where: {

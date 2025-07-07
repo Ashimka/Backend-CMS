@@ -1,4 +1,5 @@
 import { APP_GUARD } from '@nestjs/core'
+import { CacheModule } from '@nestjs/cache-manager'
 import { ConfigModule } from '@nestjs/config'
 import * as Joi from 'joi'
 import { Module } from '@nestjs/common'
@@ -13,9 +14,16 @@ import { ProductModule } from './product/product.module'
 import { ReviewModule } from './review/review.module'
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard'
 import { DashboardModule } from './dashboard/dashboard.module'
+import { redisStore } from 'cache-manager-redis-store'
 
 @Module({
 	imports: [
+		CacheModule.register({
+			isGlobal: true,
+			store: redisStore,
+			host: process.env.REDIS_HOST || 'localhost',
+			port: parseInt(process.env.REDIS_PORT) || 6379,
+		}),
 		ConfigModule.forRoot({
 			isGlobal: true,
 			envFilePath: [`.env.${process.env.NODE_ENV}`, '.env'],
@@ -27,6 +35,9 @@ import { DashboardModule } from './dashboard/dashboard.module'
 				DATABASE_URL: Joi.string().required(),
 
 				PORT: Joi.number().default(8050),
+
+				REDIS_PORT: Joi.number().default(6379),
+				REDIS_HOST: Joi.string().default('localhost'),
 
 				JWT_SECRET: Joi.string().required(),
 				REFRESH_TOKEN_NAME: Joi.string().required(),
