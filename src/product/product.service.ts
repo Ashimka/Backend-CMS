@@ -1,10 +1,23 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { PrismaService } from 'src/prisma.service'
 import { ProductDto } from './dto/product.dto'
+import { RedisCacheService } from 'src/redis-cache/redis-cache.service'
 
 @Injectable()
 export class ProductService {
-	constructor(private prisma: PrismaService) {}
+	constructor(
+		private prisma: PrismaService,
+		private readonly redisService: RedisCacheService,
+	) {}
+
+	private getCacheKey(params: {
+		take: number
+		skip: number
+		searchTerm?: string
+		page: number
+	}): string {
+		return `products:${params.page}:${params.take}:${params.skip}:${params.searchTerm || ''}`
+	}
 
 	async getAll({
 		take,
@@ -17,10 +30,27 @@ export class ProductService {
 		searchTerm?: string
 		page: number
 	}) {
+		const cacheKey = this.getCacheKey({ take, skip, searchTerm, page })
+
+		const isCacheAvailable = await this.redisService.isAvailable()
+		let cachedData
+
+		if (isCacheAvailable) {
+			cachedData = await this.redisService.get(cacheKey)
+			if (cachedData) {
+				return JSON.parse(cachedData)
+			}
+		}
+
 		const [items, total] = await Promise.all([
 			this.prisma.product.findMany({
 				where: searchTerm
-					? { title: { contains: searchTerm, mode: 'insensitive' } }
+					? {
+							title: {
+								contains: searchTerm,
+								mode: 'insensitive',
+							},
+						}
 					: {},
 				take,
 				skip,
@@ -39,15 +69,30 @@ export class ProductService {
 					},
 				},
 			}),
-			this.prisma.product.count(),
+			this.prisma.product.count({
+				where: searchTerm
+					? {
+							title: {
+								contains: searchTerm,
+								mode: 'insensitive',
+							},
+						}
+					: {},
+			}),
 		])
 
-		return {
+		const result = {
 			total,
 			page: +page,
 			limit: take,
 			items,
 		}
+
+		if (isCacheAvailable) {
+			await this.redisService.set(cacheKey, result, 300)
+		}
+
+		return result
 	}
 
 	private async getSearchTermFilter(searchTerm: string) {
