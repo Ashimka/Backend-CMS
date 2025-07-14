@@ -37,7 +37,7 @@ export class ProductController {
 			take,
 			skip,
 			searchTerm,
-			page,
+			page: +page,
 		})
 	}
 

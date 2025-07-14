@@ -1,5 +1,4 @@
 import { APP_GUARD } from '@nestjs/core'
-import { CacheModule } from '@nestjs/cache-manager'
 import { ConfigModule } from '@nestjs/config'
 import * as Joi from 'joi'
 import { Module } from '@nestjs/common'
@@ -14,16 +13,10 @@ import { ProductModule } from './product/product.module'
 import { ReviewModule } from './review/review.module'
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard'
 import { DashboardModule } from './dashboard/dashboard.module'
-import { redisStore } from 'cache-manager-redis-store'
+import { RedisCacheModule } from './redis-cache/redis-cache.module'
 
 @Module({
 	imports: [
-		CacheModule.register({
-			isGlobal: true,
-			store: redisStore,
-			host: process.env.REDIS_HOST || 'localhost',
-			port: parseInt(process.env.REDIS_PORT) || 6379,
-		}),
 		ConfigModule.forRoot({
 			isGlobal: true,
 			envFilePath: [`.env.${process.env.NODE_ENV}`, '.env'],
@@ -72,6 +65,7 @@ import { redisStore } from 'cache-manager-redis-store'
 		ProductModule,
 		ReviewModule,
 		DashboardModule,
+		RedisCacheModule,
 	],
 	providers: [
 		{

@@ -7,27 +7,6 @@ export type UserProfile = Prisma.UserGetPayload<{
 		name: true
 		avatar: true
 		role: true
-		reviews: true
-		favorites: {
-			select: {
-				products: {
-					select: {
-						id: true
-						title: true
-						description: true
-						images: true
-						price: true
-						category: {
-							select: {
-								id: true
-								title: true
-								description: true
-							}
-						}
-					}
-				}
-			}
-		}
 		profile: {
 			select: {
 				id: true
@@ -37,6 +16,5 @@ export type UserProfile = Prisma.UserGetPayload<{
 				phone: true
 			}
 		}
-		orders: true
 	}
 }>

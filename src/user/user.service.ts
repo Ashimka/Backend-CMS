@@ -1,75 +1,63 @@
-import { Inject, Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, NotFoundException } from '@nestjs/common'
 import { hash } from 'argon2'
 import { AuthDto } from 'src/auth/dto/auth.dto'
 import { PrismaService } from 'src/prisma.service'
 import { ProfileDto } from './dto/profile.dto'
-import { CACHE_MANAGER } from '@nestjs/cache-manager'
-import { Cache } from 'cache-manager'
-import { UserProfile } from './user.type'
+import { RedisCacheService } from 'src/redis-cache/redis-cache.service'
 
 @Injectable()
 export class UserService {
 	constructor(
 		private readonly prisma: PrismaService,
-		@Inject(CACHE_MANAGER) private cacheManager: Cache,
+		private readonly redisService: RedisCacheService,
 	) {}
 
-	async getById(id: string) {
-		const cacheKey = `user_${id}`
-
-		let user: UserProfile = await this.cacheManager.get(cacheKey)
-
-		if (user) {
-			return user
-		}
-		user = await this.prisma.user.findUnique({
+	async isValidateUser(id: string) {
+		return this.prisma.user.findUnique({
 			where: { id },
 			select: {
 				id: true,
-				email: true,
-				name: true,
-				avatar: true,
-				role: true,
-				reviews: true,
-				favorites: {
-					select: {
-						products: {
-							select: {
-								id: true,
-								title: true,
-								description: true,
-								images: true,
-								price: true,
-								category: {
-									select: {
-										id: true,
-										title: true,
-										description: true,
-									},
-								},
-							},
+			},
+		})
+	}
+	async getById(id: string) {
+		const cacheKey = `user_${id}`
+
+		try {
+			const cachedUser = await this.redisService.get(cacheKey)
+
+			if (cachedUser) {
+				return JSON.parse(cachedUser)
+			}
+
+			const user = await this.prisma.user.findUnique({
+				where: { id },
+				select: {
+					id: true,
+					email: true,
+					name: true,
+					avatar: true,
+					role: true,
+					profile: {
+						select: {
+							id: true,
+							address: true,
+							firstName: true,
+							lastName: true,
+							phone: true,
 						},
 					},
 				},
-				profile: {
-					select: {
-						id: true,
-						address: true,
-						firstName: true,
-						lastName: true,
-						phone: true,
-					},
-				},
-				orders: true,
-			},
-		})
+			})
 
-		if (user) {
-			await this.cacheManager.set(cacheKey, user)
+			await this.redisService.set(cacheKey, user, 3600)
+
+			return user
+		} catch (error) {
+			console.error('Cache operation error:', error)
 		}
-
-		return user
 	}
+
 	async getByEmail(email: string) {
 		const user = await this.prisma.user.findUnique({
 			where: { email },
@@ -183,7 +171,7 @@ export class UserService {
 			throw new NotFoundException('Профиль пользователя не найден')
 		}
 
-		await this.cacheManager.del(`user_${id}`)
+		await this.redisService.del(`user_${id}`)
 
 		return this.prisma.profile.update({
 			where: {
