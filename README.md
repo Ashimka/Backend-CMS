@@ -1,42 +1,87 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="200" alt="Nest Logo" /></a>
-</p>
+# Backend CMS для онлайн-магазина
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+## Описание
 
-## Description
+Это серверная часть (CMS) для онлайн-магазина, реализованная на базе [NestJS](https://nestjs.com/) и [Prisma ORM](https://www.prisma.io/) с использованием PostgreSQL. Приложение поддерживает управление пользователями, товарами, заказами, категориями, отзывами, а также предоставляет административную панель и статистику.
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Основные возможности
 
-## Installation
+- **Аутентификация и авторизация** (JWT, VK, Yandex, роли пользователей)
+- **Управление пользователями** (регистрация, профиль, роли)
+- **Работа с товарами** (CRUD, категории, изображения, избранное)
+- **Оформление и управление заказами**
+- **Отзывы и рейтинги товаров**
+- **Категории товаров**
+- **Загрузка и хранение файлов**
+- **Кэширование с помощью Redis**
+- **Панель администратора и статистика**
+
+## Структура проекта
+
+- `src/auth` — аутентификация и авторизация
+- `src/user` — управление пользователями
+- `src/product` — управление товарами
+- `src/order` — управление заказами
+- `src/category` — категории товаров
+- `src/review` — отзывы о товарах
+- `src/file` — загрузка и хранение файлов
+- `src/dashboard` — административная панель
+- `src/statistics` — статистика по заказам и пользователям
+- `src/redis-cache` — кэширование с помощью Redis
+- `prisma/schema.prisma` — описание моделей базы данных
+
+## Установка
 
 ```bash
-$ yarn install
+yarn install
 ```
 
-## Running the app
+## Настройка переменных окружения
+
+Создайте файл `.env` на основе примера и укажите параметры подключения к базе данных PostgreSQL, Redis и другие необходимые переменные.
+
+## Миграции и генерация Prisma Client
 
 ```bash
-# development
-$ yarn run start
+# Применить миграции
+npx prisma migrate deploy
 
-# watch mode
-$ yarn run start:dev
-
-# production mode
-$ yarn run start:prod
+# Сгенерировать Prisma Client
+yarn prisma:gen
 ```
 
-## Test
+## Запуск приложения
 
 ```bash
-# unit tests
-$ yarn run test
+# Режим разработки
+yarn start:dev
 
-# e2e tests
-$ yarn run test:e2e
-
-# test coverage
-$ yarn run test:cov
+# Сборка и запуск в production
+yarn build
+yarn start:prod
 ```
+
+## Тестирование
+
+```bash
+# Юнит-тесты
+yarn test
+
+# E2E тесты
+yarn test:e2e
+
+# Покрытие тестами
+yarn test:cov
+```
+
+## Используемые технологии
+
+- **NestJS** — серверный фреймворк
+- **Prisma ORM** — работа с базой данных PostgreSQL
+- **Redis** — кэширование
+- **Jest** — тестирование
+- **TypeScript** — основной язык разработки
+
+## Структура базы данных (Prisma)
+
+В проекте реализованы основные сущности: User, Product, Category, Order, Review, Favorites, Profile, OrderItem. Все связи и поля описаны в файле `prisma/schema.prisma`.
