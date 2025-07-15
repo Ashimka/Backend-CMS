@@ -1,10 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
+import { Injectable, Logger, NotFoundException } from '@nestjs/common'
 import { PrismaService } from 'src/prisma.service'
 import { ProductDto } from './dto/product.dto'
 import { RedisCacheService } from 'src/redis-cache/redis-cache.service'
 
 @Injectable()
 export class ProductService {
+	private readonly logger = new Logger(ProductService.name)
 	constructor(
 		private prisma: PrismaService,
 		private readonly redisService: RedisCacheService,
@@ -91,7 +92,6 @@ export class ProductService {
 		if (isCacheAvailable) {
 			await this.redisService.set(cacheKey, result, 300)
 		}
-
 		return result
 	}
 
@@ -118,6 +118,13 @@ export class ProductService {
 	}
 
 	async getById(id: string) {
+		const cacheKey = `product_one_${id}`
+
+		const cachedProduct = await this.redisService.get(cacheKey)
+
+		if (cachedProduct) {
+			return JSON.parse(cachedProduct)
+		}
 		const product = await this.prisma.product.findUnique({
 			where: {
 				id,
@@ -133,6 +140,8 @@ export class ProductService {
 		})
 
 		if (!product) throw new NotFoundException('Товар не найден')
+
+		await this.redisService.set(cacheKey, product, 600)
 
 		return product
 	}
@@ -219,7 +228,7 @@ export class ProductService {
 	}
 
 	async create(dto: ProductDto) {
-		return this.prisma.product.create({
+		const newProduct = await this.prisma.product.create({
 			data: {
 				title: dto.title,
 				description: dto.description,
@@ -228,15 +237,24 @@ export class ProductService {
 				categoryId: dto.categoryId,
 			},
 		})
+		await this.clearProductsCache(dto)
+
+		return newProduct
 	}
 
 	async update(id: string, dto: ProductDto) {
+		const cacheKey = `product_one_${id}`
+
 		await this.getById(id)
 
-		return this.prisma.product.update({
+		const updatedProduct = await this.prisma.product.update({
 			where: { id },
 			data: dto,
 		})
+
+		await this.redisService.del(cacheKey)
+
+		return updatedProduct
 	}
 
 	async delete(id: string) {
@@ -245,5 +263,20 @@ export class ProductService {
 		return this.prisma.product.delete({
 			where: { id },
 		})
+	}
+
+	private async clearProductsCache(dto: ProductDto) {
+		try {
+			await this.redisService.delByPattern('products:*')
+
+			await this.redisService.del('products:all')
+			if (dto.categoryId) {
+				await this.redisService.del(
+					`products:category:${dto.categoryId}`,
+				)
+			}
+		} catch (err) {
+			this.logger.error('Failed to clear products cache', err.stack)
+		}
 	}
 }

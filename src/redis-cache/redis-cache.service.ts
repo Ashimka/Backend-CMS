@@ -51,6 +51,13 @@ export class RedisCacheService {
 		}
 	}
 
+	async delByPattern(pattern: string): Promise<void> {
+		const keys = await this.redisClient.keys(pattern)
+		if (keys.length > 0) {
+			await this.redisClient.del(...keys)
+		}
+	}
+
 	async isAvailable(): Promise<boolean> {
 		try {
 			await this.redisClient.ping()
