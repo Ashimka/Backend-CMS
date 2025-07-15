@@ -13,12 +13,24 @@ export class UserService {
 	) {}
 
 	async isValidateUser(id: string) {
-		return this.prisma.user.findUnique({
+		const cacheKey = `user_is_valid_${id}`
+
+		const cachedUserValid = await this.redisService.get(cacheKey)
+
+		if (cachedUserValid) {
+			return JSON.parse(cachedUserValid)
+		}
+
+		const findUser = await this.prisma.user.findUnique({
 			where: { id },
 			select: {
 				id: true,
+				role: true,
 			},
 		})
+		await this.redisService.set(cacheKey, findUser, 3600)
+
+		return findUser
 	}
 	async getById(id: string) {
 		const cacheKey = `user_${id}`
@@ -45,6 +57,28 @@ export class UserService {
 							firstName: true,
 							lastName: true,
 							phone: true,
+						},
+					},
+					orders: true,
+					reviews: true,
+					favorites: {
+						select: {
+							products: {
+								select: {
+									id: true,
+									title: true,
+									description: true,
+									images: true,
+									price: true,
+									category: {
+										select: {
+											id: true,
+											title: true,
+											description: true,
+										},
+									},
+								},
+							},
 						},
 					},
 				},

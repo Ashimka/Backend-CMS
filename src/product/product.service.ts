@@ -253,6 +253,7 @@ export class ProductService {
 		})
 
 		await this.redisService.del(cacheKey)
+		await this.clearProductsCache(dto)
 
 		return updatedProduct
 	}
