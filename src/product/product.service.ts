@@ -1,23 +1,23 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common'
-import { PrismaService } from 'src/prisma.service'
-import { ProductDto } from './dto/product.dto'
-import { RedisCacheService } from 'src/redis-cache/redis-cache.service'
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { PrismaService } from 'src/prisma.service';
+import { ProductDto } from './dto/product.dto';
+import { RedisCacheService } from 'src/redis-cache/redis-cache.service';
 
 @Injectable()
 export class ProductService {
-	private readonly logger = new Logger(ProductService.name)
+	private readonly logger = new Logger(ProductService.name);
 	constructor(
 		private prisma: PrismaService,
 		private readonly redisService: RedisCacheService,
 	) {}
 
 	private getCacheKey(params: {
-		take: number
-		skip: number
-		searchTerm?: string
-		page: number
+		take: number;
+		skip: number;
+		searchTerm?: string;
+		page: number;
 	}): string {
-		return `products:${params.page}:${params.take}:${params.skip}:${params.searchTerm || ''}`
+		return `products:${params.page}:${params.take}:${params.skip}:${params.searchTerm || ''}`;
 	}
 
 	async getAll({
@@ -26,20 +26,20 @@ export class ProductService {
 		searchTerm,
 		page,
 	}: {
-		take: number
-		skip: number
-		searchTerm?: string
-		page: number
+		take: number;
+		skip: number;
+		searchTerm?: string;
+		page: number;
 	}) {
-		const cacheKey = this.getCacheKey({ take, skip, searchTerm, page })
+		const cacheKey = this.getCacheKey({ take, skip, searchTerm, page });
 
-		const isCacheAvailable = await this.redisService.isAvailable()
-		let cachedData
+		const isCacheAvailable = await this.redisService.isAvailable();
+		let cachedData;
 
 		if (isCacheAvailable) {
-			cachedData = await this.redisService.get(cacheKey)
+			cachedData = await this.redisService.get(cacheKey);
 			if (cachedData) {
-				return JSON.parse(cachedData)
+				return JSON.parse(cachedData);
 			}
 		}
 
@@ -80,50 +80,28 @@ export class ProductService {
 						}
 					: {},
 			}),
-		])
+		]);
 
 		const result = {
 			total,
 			page: +page,
 			limit: take,
 			items,
-		}
+		};
 
 		if (isCacheAvailable) {
-			await this.redisService.set(cacheKey, result, 300)
+			await this.redisService.set(cacheKey, result, 300);
 		}
-		return result
-	}
-
-	private async getSearchTermFilter(searchTerm: string) {
-		return await this.prisma.product.findMany({
-			where: {
-				OR: [
-					{
-						title: {
-							contains: searchTerm,
-						},
-					},
-					{
-						description: {
-							contains: searchTerm,
-						},
-					},
-				],
-			},
-			include: {
-				category: true,
-			},
-		})
+		return result;
 	}
 
 	async getById(id: string) {
-		const cacheKey = `product_one_${id}`
+		const cacheKey = `product_one_${id}`;
 
-		const cachedProduct = await this.redisService.get(cacheKey)
+		const cachedProduct = await this.redisService.get(cacheKey);
 
 		if (cachedProduct) {
-			return JSON.parse(cachedProduct)
+			return JSON.parse(cachedProduct);
 		}
 		const product = await this.prisma.product.findUnique({
 			where: {
@@ -137,13 +115,13 @@ export class ProductService {
 					},
 				},
 			},
-		})
+		});
 
-		if (!product) throw new NotFoundException('Товар не найден')
+		if (!product) throw new NotFoundException('Товар не найден');
 
-		await this.redisService.set(cacheKey, product, 600)
+		await this.redisService.set(cacheKey, product, 600);
 
-		return product
+		return product;
 	}
 
 	async getByCategory(categoryId: string) {
@@ -165,11 +143,12 @@ export class ProductService {
 				},
 				createdAt: true,
 			},
-		})
+		});
 
-		if (!products) throw new NotFoundException('Товары не найдены')
+		if (products.length === 0)
+			throw new NotFoundException('Товары не найдены');
 
-		return products
+		return products;
 	}
 
 	async getMostPopular() {
@@ -183,9 +162,9 @@ export class ProductService {
 					id: 'desc',
 				},
 			},
-		})
+		});
 
-		const productIds = mostPopularProducts.map(item => item.productId)
+		const productIds = mostPopularProducts.map(item => item.productId);
 
 		const products = await this.prisma.product.findMany({
 			where: {
@@ -196,16 +175,16 @@ export class ProductService {
 			include: {
 				category: true,
 			},
-		})
+		});
 
-		return products
+		return products;
 	}
 
 	async getSimilar(id: string) {
-		const currentProduct = await this.getById(id)
+		const currentProduct = await this.getById(id);
 
 		if (!currentProduct)
-			throw new NotFoundException('Текущий товар не найден')
+			throw new NotFoundException('Текущий товар не найден');
 
 		const products = await this.prisma.product.findMany({
 			where: {
@@ -222,9 +201,9 @@ export class ProductService {
 			include: {
 				category: true,
 			},
-		})
+		});
 
-		return products
+		return products;
 	}
 
 	async create(dto: ProductDto) {
@@ -236,48 +215,53 @@ export class ProductService {
 				images: dto.images,
 				categoryId: dto.categoryId,
 			},
-		})
-		await this.clearProductsCache(dto)
+		});
+		await this.clearProductsCache(dto);
 
-		return newProduct
+		return newProduct;
 	}
 
 	async update(id: string, dto: ProductDto) {
-		const cacheKey = `product_one_${id}`
+		const cacheKey = `product_one_${id}`;
 
-		await this.getById(id)
+		await this.getById(id);
 
 		const updatedProduct = await this.prisma.product.update({
 			where: { id },
 			data: dto,
-		})
+		});
 
-		await this.redisService.del(cacheKey)
-		await this.clearProductsCache(dto)
+		await this.redisService.del(cacheKey);
+		await this.clearProductsCache(dto);
 
-		return updatedProduct
+		return updatedProduct;
 	}
 
 	async delete(id: string) {
-		await this.getById(id)
+		const cacheKey = `product_one_${id}`;
+		await this.getById(id);
 
-		return this.prisma.product.delete({
+		const deletedProduct = await this.prisma.product.delete({
 			where: { id },
-		})
+		});
+		await this.redisService.del(cacheKey);
+		await this.clearProductsCache(deletedProduct);
+
+		return 'product deleted';
 	}
 
 	private async clearProductsCache(dto: ProductDto) {
 		try {
-			await this.redisService.delByPattern('products:*')
+			await this.redisService.delByPattern('products:*');
 
-			await this.redisService.del('products:all')
+			await this.redisService.del('products:all');
 			if (dto.categoryId) {
 				await this.redisService.del(
 					`products:category:${dto.categoryId}`,
-				)
+				);
 			}
 		} catch (err) {
-			this.logger.error('Failed to clear products cache', err.stack)
+			this.logger.error('Failed to clear products cache', err.stack);
 		}
 	}
 }
