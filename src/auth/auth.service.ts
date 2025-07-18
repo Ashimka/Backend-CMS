@@ -4,17 +4,17 @@ import {
 	NotFoundException,
 	UnauthorizedException,
 	Logger,
-} from '@nestjs/common'
-import { JwtService } from '@nestjs/jwt'
-import { PrismaService } from 'src/prisma.service'
-import { UserService } from 'src/user/user.service'
-import { AuthDto } from './dto/auth.dto'
-import { ConfigService } from '@nestjs/config'
-import { verify } from 'argon2'
+} from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { PrismaService } from 'src/prisma.service';
+import { UserService } from 'src/user/user.service';
+import { AuthDto } from './dto/auth.dto';
+import { ConfigService } from '@nestjs/config';
+import { verify } from 'argon2';
 
 @Injectable()
 export class AuthService {
-	private readonly logger = new Logger(AuthService.name)
+	private readonly logger = new Logger(AuthService.name);
 
 	constructor(
 		private jwt: JwtService,
@@ -24,84 +24,87 @@ export class AuthService {
 	) {}
 
 	async register(dto: AuthDto) {
-		this.logger.log(`Регистрация пользователя: ${dto.email}`)
-		const foundUser = await this.userService.getByEmail(dto.email)
+		this.logger.log(`Регистрация пользователя: ${dto.email}`);
+		const foundUser = await this.userService.isValidateUser(dto.email);
 
 		if (foundUser) {
 			this.logger.warn(
 				`Отказ в регистрации: ${dto.email} (Email уже зарегистрирован!)`,
-			)
-			throw new BadRequestException('Пользователь уже зарегистрирован!')
+			);
+			throw new BadRequestException('Пользователь уже зарегистрирован!');
 		}
 
-		const user = await this.userService.create(dto)
-		const tokens = this.issueTokens(user.id, user.role)
-		this.logger.log(`Успешная регистрация: ${dto.email} (id: ${user.id})`)
+		const user = await this.userService.create(dto);
+		const tokens = this.issueTokens(user.id, user.role);
+		this.logger.log(`Успешная регистрация: ${dto.email} (id: ${user.id})`);
 
-		return { user, ...tokens }
+		return { user, ...tokens };
 	}
 
 	async login(dto: AuthDto) {
-		this.logger.log(`Попытка авторизации: ${dto.email}`)
-		const user = await this.validateUser(dto)
+		this.logger.log(`Попытка авторизации: ${dto.email}`);
+		const user = await this.validateUser(dto);
 
-		const verifyPass = await this.chechPassword(dto.password, user.password)
+		const verifyPass = await this.chechPassword(
+			dto.password,
+			user.password,
+		);
 
 		if (!verifyPass) {
 			this.logger.warn(
 				`Неуспешная авторизация: ${dto.email} (неверный пароль)`,
-			)
-			throw new UnauthorizedException('Неверный пароль')
+			);
+			throw new UnauthorizedException('Неверный пароль');
 		}
 
-		const tokens = this.issueTokens(user.id, user.role)
-		this.logger.log(`Успешная авторизация: ${dto.email} (id: ${user.id})`)
-		return { user, ...tokens }
+		const tokens = this.issueTokens(user.id, user.role);
+		this.logger.log(`Успешная авторизация: ${dto.email} (id: ${user.id})`);
+		return { user, ...tokens };
 	}
 
 	async getNewTokens(refreshToken: string) {
-		const result = await this.jwt.verifyAsync(refreshToken)
+		const result = await this.jwt.verifyAsync(refreshToken);
 
 		if (!result) {
-			throw new UnauthorizedException('Не авторизован, token invalid!')
+			throw new UnauthorizedException('Не авторизован, token invalid!');
 		}
 
-		const user = await this.userService.getById(result.id)
-		const tokens = this.issueTokens(user.id, user.role)
+		const user = await this.userService.getById(result.id);
+		const tokens = this.issueTokens(user.id, user.role);
 
-		return { user, ...tokens }
+		return { user, ...tokens };
 	}
 
 	issueTokens(userId: string, role: string) {
-		const data = { id: userId, role }
+		const data = { id: userId, role };
 
 		const accessToken = this.jwt.sign(data, {
 			expiresIn: this.configService.get('AT_EXP'),
-		})
+		});
 		const refreshToken = this.jwt.sign(data, {
 			expiresIn: this.configService.get('RT_EXP'),
-		})
+		});
 
-		return { accessToken, refreshToken }
+		return { accessToken, refreshToken };
 	}
 
 	private async validateUser(dto: AuthDto) {
-		const user = await this.userService.getByEmail(dto.email)
+		const user = await this.userService.getByEmail(dto.email);
 
 		if (!user) {
 			this.logger.warn(
 				`Попытка авторизации с несуществующим email: ${dto.email}`,
-			)
-			throw new NotFoundException('Пользователь не найден!')
+			);
+			throw new NotFoundException('Пользователь не найден!');
 		}
 
-		return user
+		return user;
 	}
 
 	async validateOAuthLogin(req: any) {
 		let user = req.user.vkId
 			? await this.userService.getByVkId(req.user.vkId)
-			: await this.userService.getByEmail(req.user.email)
+			: await this.userService.getByEmail(req.user.email);
 
 		if (!user) {
 			user = await this.prisma.user.create({
@@ -115,15 +118,15 @@ export class AuthService {
 					favorites: true,
 					orders: true,
 				},
-			})
+			});
 		}
 
-		const tokens = this.issueTokens(user.id, user.role)
+		const tokens = this.issueTokens(user.id, user.role);
 
-		return { user, ...tokens }
+		return { user, ...tokens };
 	}
 
 	private async chechPassword(password: string, hashPassword: string) {
-		return await verify(hashPassword, password)
+		return await verify(hashPassword, password);
 	}
 }
