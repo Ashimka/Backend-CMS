@@ -1,9 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common'
-import { hash } from 'argon2'
-import { AuthDto } from 'src/auth/dto/auth.dto'
-import { PrismaService } from 'src/prisma.service'
-import { ProfileDto } from './dto/profile.dto'
-import { RedisCacheService } from 'src/redis-cache/redis-cache.service'
+import { Injectable, NotFoundException } from '@nestjs/common';
+import { hash } from 'argon2';
+import { AuthDto } from 'src/auth/dto/auth.dto';
+import { PrismaService } from 'src/prisma.service';
+import { ProfileDto } from './dto/profile.dto';
+import { RedisCacheService } from 'src/redis-cache/redis-cache.service';
 
 @Injectable()
 export class UserService {
@@ -13,12 +13,12 @@ export class UserService {
 	) {}
 
 	async isValidateUser(id: string) {
-		const cacheKey = `user_is_valid_${id}`
+		const cacheKey = `user_is_valid_${id}`;
 
-		const cachedUserValid = await this.redisService.get(cacheKey)
+		const cachedUserValid = await this.redisService.get(cacheKey);
 
 		if (cachedUserValid) {
-			return JSON.parse(cachedUserValid)
+			return JSON.parse(cachedUserValid);
 		}
 
 		const findUser = await this.prisma.user.findUnique({
@@ -27,19 +27,19 @@ export class UserService {
 				id: true,
 				role: true,
 			},
-		})
-		await this.redisService.set(cacheKey, findUser, 3600)
+		});
+		await this.redisService.set(cacheKey, findUser, 3600);
 
-		return findUser
+		return findUser;
 	}
 	async getById(id: string) {
-		const cacheKey = `user_${id}`
+		const cacheKey = `user_${id}`;
 
 		try {
-			const cachedUser = await this.redisService.get(cacheKey)
+			const cachedUser = await this.redisService.get(cacheKey);
 
 			if (cachedUser) {
-				return JSON.parse(cachedUser)
+				return JSON.parse(cachedUser);
 			}
 
 			const user = await this.prisma.user.findUnique({
@@ -82,13 +82,13 @@ export class UserService {
 						},
 					},
 				},
-			})
+			});
 
-			await this.redisService.set(cacheKey, user, 3600)
+			await this.redisService.set(cacheKey, user, 3600);
 
-			return user
+			return user;
 		} catch (error) {
-			console.error('Cache operation error:', error)
+			console.error('Cache operation error:', error);
 		}
 	}
 
@@ -99,9 +99,9 @@ export class UserService {
 				favorites: true,
 				orders: true,
 			},
-		})
+		});
 
-		return user
+		return user;
 	}
 	async getByVkId(vkId: number) {
 		const user = await this.prisma.user.findFirst({
@@ -110,9 +110,9 @@ export class UserService {
 				favorites: true,
 				orders: true,
 			},
-		})
+		});
 
-		return user
+		return user;
 	}
 
 	async getAllUsers({
@@ -120,9 +120,9 @@ export class UserService {
 		skip,
 		page,
 	}: {
-		take: number
-		skip: number
-		page: number
+		take: number;
+		skip: number;
+		page: number;
 	}) {
 		const [items, total] = await Promise.all([
 			await this.prisma.user.findMany({
@@ -141,13 +141,13 @@ export class UserService {
 				},
 			}),
 			this.prisma.user.count(),
-		])
+		]);
 		return {
 			total,
 			page: +page,
 			limit: take,
 			items,
-		}
+		};
 	}
 
 	async toggleFavorite(productId: string, userId: string) {
@@ -156,35 +156,44 @@ export class UserService {
 				userId,
 				productId,
 			},
-		})
+		});
 
 		if (isExists) {
 			await this.prisma.favorites.delete({
 				where: {
 					id: isExists.id,
 				},
-			})
+			});
 		} else {
 			await this.prisma.favorites.create({
 				data: {
 					userId,
 					productId,
 				},
-			})
+			});
 		}
 
-		return true
+		return true;
 	}
 
 	async create(dto: AuthDto) {
-		return this.prisma.user.create({
+		const newUser = await this.prisma.user.create({
 			data: {
 				email: dto.email,
 				name: dto.name,
 				avatar: '/uploads/noavatar.png',
 				password: await hash(dto.password),
 			},
-		})
+		});
+
+		return {
+			id: newUser.id,
+			vkId: newUser ?? newUser.vkId,
+			email: newUser.email,
+			name: newUser.name,
+			avatar: newUser.avatar,
+			role: newUser.role,
+		};
 	}
 
 	async profileCreate(id: string, dto: ProfileDto) {
@@ -196,22 +205,22 @@ export class UserService {
 				phone: dto.phone,
 				userId: id,
 			},
-		})
+		});
 	}
 	async profileUpdate(id: string, dto: ProfileDto) {
-		const user = await this.getById(id)
+		const user = await this.getById(id);
 
 		if (user.profile === null) {
-			throw new NotFoundException('Профиль пользователя не найден')
+			throw new NotFoundException('Профиль пользователя не найден');
 		}
 
-		await this.redisService.del(`user_${id}`)
+		await this.redisService.del(`user_${id}`);
 
 		return this.prisma.profile.update({
 			where: {
 				id: user.profile.id,
 			},
 			data: dto,
-		})
+		});
 	}
 }

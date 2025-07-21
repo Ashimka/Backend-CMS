@@ -38,14 +38,21 @@ export class AuthService {
 		const tokens = this.issueTokens(user.id, user.role);
 		this.logger.log(`Успешная регистрация: ${dto.email} (id: ${user.id})`);
 
-		return { user, ...tokens };
+		return {
+			id: user.id,
+			name: user.name,
+			email: user.email,
+			avatar: user.avatar,
+			role: user.role,
+			...tokens,
+		};
 	}
 
 	async login(dto: AuthDto) {
 		this.logger.log(`Попытка авторизации: ${dto.email}`);
 		const user = await this.validateUser(dto);
 
-		const verifyPass = await this.chechPassword(
+		const verifyPass = await this.hachedPassword(
 			dto.password,
 			user.password,
 		);
@@ -88,7 +95,7 @@ export class AuthService {
 		return { accessToken, refreshToken };
 	}
 
-	private async validateUser(dto: AuthDto) {
+	async validateUser(dto: AuthDto) {
 		const user = await this.userService.getByEmail(dto.email);
 
 		if (!user) {
@@ -126,7 +133,7 @@ export class AuthService {
 		return { user, ...tokens };
 	}
 
-	private async chechPassword(password: string, hashPassword: string) {
+	async hachedPassword(password: string, hashPassword: string) {
 		return await verify(hashPassword, password);
 	}
 }

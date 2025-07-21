@@ -1,83 +1,167 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { UserService } from '../user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../prisma.service';
-import { BadRequestException } from '@nestjs/common';
 import { AuthDto } from './dto/auth.dto';
+import { BadRequestException } from '@nestjs/common';
+import { Role } from '@prisma/client';
 
 describe('AuthService', () => {
 	let authService: AuthService;
-	let userService: jest.Mocked<UserService>;
-	let jwtService: jest.Mocked<JwtService>;
-	let configService: jest.Mocked<ConfigService>;
-	let prismaService: jest.Mocked<PrismaService>;
-
-	const mockVkId = 123456;
-
-	const mockUserDto: AuthDto = {
-		name: 'NewUser',
-		email: 'new-user@mail.ru',
-		password: 'password123456',
-		vkId: mockVkId,
-	};
+	let userService: UserService;
+	let jwtService: JwtService;
 
 	beforeEach(async () => {
-		jest.clearAllMocks();
-		const module: TestingModule = await Test.createTestingModule({
+		const moduleRef = await Test.createTestingModule({
 			providers: [
 				AuthService,
 				{
 					provide: UserService,
 					useValue: {
 						isValidateUser: jest.fn(),
-						create: jest.fn().mockResolvedValue(mockUserDto),
+						create: jest.fn(),
 					},
 				},
 				{
 					provide: JwtService,
-					useValue: { sign: jest.fn().mockReturnValue('token') },
+					useValue: {
+						sign: jest.fn().mockReturnValue('mockToken'),
+					},
 				},
 				{
 					provide: ConfigService,
-					useValue: { get: jest.fn().mockReturnValue('1h') },
+					useValue: {
+						get: jest.fn().mockReturnValue('mockSecret'),
+					},
 				},
-				{ provide: PrismaService, useValue: {} },
+				{
+					provide: PrismaService,
+					useValue: {},
+				},
 			],
 		}).compile();
 
-		authService = module.get<AuthService>(AuthService);
-		userService = module.get(UserService);
-		jwtService = module.get(JwtService);
-		configService = module.get(ConfigService);
-		prismaService = module.get(PrismaService);
+		authService = moduleRef.get<AuthService>(AuthService);
+		userService = moduleRef.get<UserService>(UserService);
+		jwtService = moduleRef.get<JwtService>(JwtService);
 	});
 
 	describe('register', () => {
-		it('успешная регистрация нового пользователя', async () => {
-			userService.isValidateUser.mockResolvedValue(null);
+		const mockAuthDto = {
+			email: 'test@example.com',
+			name: 'User test',
+			password: 'password123',
+		} as AuthDto;
 
-			const result = await authService.register(mockUserDto);
+		const mockUser = {
+			id: '1',
+			email: 'test@example.com',
+			name: 'Test User',
+			avatar: 'default-avatar.jpg',
+			role: Role.USER,
+			vkId: null,
+			createdAt: new Date(),
+			updatedAt: new Date(),
+		};
+
+		it('успешная регистрация нового пользователя', async () => {
+			jest.spyOn(userService, 'isValidateUser').mockResolvedValue(null);
+			jest.spyOn(userService, 'create').mockResolvedValue(mockUser);
+
+			jest.spyOn(authService, 'issueTokens').mockReturnValue({
+				accessToken: 'mockToken',
+				refreshToken: 'mockToken',
+			});
+
+			const result = await authService.register(mockAuthDto);
 
 			expect(userService.isValidateUser).toHaveBeenCalledWith(
-				mockUserDto.email,
+				mockAuthDto.email,
 			);
-			expect(userService.create).toHaveBeenCalledWith(mockUserDto);
+			expect(userService.create).toHaveBeenCalledWith(mockAuthDto);
 			expect(result).toEqual({
-				user: mockUserDto,
-				accessToken: 'token',
-				refreshToken: 'token',
+				id: mockUser.id,
+				email: mockUser.email,
+				name: mockUser.name,
+				avatar: mockUser.avatar,
+				role: mockUser.role,
+				refreshToken: 'mockToken',
+				accessToken: 'mockToken',
 			});
 		});
 
-		it('ошибка при регистрации уже существующего пользователя', async () => {
-			userService.isValidateUser.mockResolvedValue(mockUserDto.email);
+		it('если пользователь существует получить BadRequestException', async () => {
+			jest.spyOn(userService, 'isValidateUser').mockResolvedValue(
+				mockUser,
+			);
 
-			await expect(authService.register(mockUserDto)).rejects.toThrow(
+			await expect(authService.register(mockAuthDto)).rejects.toThrow(
 				BadRequestException,
 			);
+			expect(userService.isValidateUser).toHaveBeenCalledWith(
+				mockAuthDto.email,
+			);
 			expect(userService.create).not.toHaveBeenCalled();
+		});
+
+		it('токены создаются с правильными параметрами', async () => {
+			jest.spyOn(userService, 'isValidateUser').mockResolvedValue(null);
+			jest.spyOn(userService, 'create').mockResolvedValue(mockUser);
+
+			const configServiceGetSpy = jest.spyOn(
+				authService['configService'],
+				'get',
+			);
+			configServiceGetSpy.mockImplementation((key: string) => {
+				if (key === 'AT_EXP') return '1h';
+				if (key === 'RT_EXP') return '7d';
+				return 'mockSecret';
+			});
+
+			const jwtSignSpy = jest.spyOn(jwtService, 'sign');
+
+			await authService.register(mockAuthDto);
+
+			expect(jwtSignSpy).toHaveBeenCalledTimes(2);
+
+			expect(jwtSignSpy).toHaveBeenCalledWith(
+				{ id: mockUser.id, role: mockUser.role },
+				{ expiresIn: '1h' },
+			);
+			expect(jwtSignSpy).toHaveBeenCalledWith(
+				{ id: mockUser.id, role: mockUser.role },
+				{ expiresIn: '7d' },
+			);
+		});
+
+		it('логирование при успешной регистрации', async () => {
+			jest.spyOn(userService, 'isValidateUser').mockResolvedValue(null);
+			jest.spyOn(userService, 'create').mockResolvedValue(mockUser);
+			const loggerSpy = jest.spyOn(authService['logger'], 'log');
+
+			await authService.register(mockAuthDto);
+
+			expect(loggerSpy).toHaveBeenCalledWith(
+				`Регистрация пользователя: ${mockAuthDto.email}`,
+			);
+			expect(loggerSpy).toHaveBeenCalledWith(
+				`Успешная регистрация: ${mockAuthDto.email} (id: ${mockUser.id})`,
+			);
+		});
+
+		it('логирование при дубликате email', async () => {
+			jest.spyOn(userService, 'isValidateUser').mockResolvedValue(
+				mockUser,
+			);
+			const loggerSpy = jest.spyOn(authService['logger'], 'warn');
+
+			await expect(authService.register(mockAuthDto)).rejects.toThrow();
+
+			expect(loggerSpy).toHaveBeenCalledWith(
+				`Отказ в регистрации: ${mockAuthDto.email} (Email уже зарегистрирован!)`,
+			);
 		});
 	});
 });
