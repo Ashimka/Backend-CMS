@@ -188,7 +188,7 @@ export class UserService {
 
 		return {
 			id: newUser.id,
-			vkId: newUser ?? newUser.vkId,
+			vkId: newUser.vkId,
 			email: newUser.email,
 			name: newUser.name,
 			avatar: newUser.avatar,
