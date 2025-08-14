@@ -1,4 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+	Injectable,
+	InternalServerErrorException,
+	Logger,
+	NotFoundException,
+} from '@nestjs/common';
 import { hash } from 'argon2';
 import { AuthDto } from 'src/auth/dto/auth.dto';
 import { PrismaService } from 'src/prisma.service';
@@ -7,6 +12,8 @@ import { RedisCacheService } from 'src/redis-cache/redis-cache.service';
 
 @Injectable()
 export class UserService {
+	private readonly logger = new Logger(UserService.name);
+
 	constructor(
 		private readonly prisma: PrismaService,
 		private readonly redisService: RedisCacheService,
@@ -84,11 +91,22 @@ export class UserService {
 				},
 			});
 
+			if (!user) {
+				throw new NotFoundException('Пользователь не найден');
+			}
+
 			await this.redisService.set(cacheKey, user, 3600);
 
 			return user;
 		} catch (error) {
-			console.error('Cache operation error:', error);
+			if (error instanceof NotFoundException) {
+				throw error;
+			}
+
+			this.logger.error('Пользователь по ID не найден', error);
+			throw new InternalServerErrorException(
+				'Ошибка при получении пользователя',
+			);
 		}
 	}
 
